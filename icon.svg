@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#e85d75"/>
+  <circle cx="256" cy="216" r="96" fill="#fff"/>
+  <text x="256" y="252" font-family="'Hiragino Sans', sans-serif" font-size="96" font-weight="700" fill="#e85d75" text-anchor="middle">あ</text>
+  <text x="256" y="420" font-family="'Hiragino Sans', sans-serif" font-size="72" font-weight="700" fill="#fff" text-anchor="middle">日本語</text>
+</svg>

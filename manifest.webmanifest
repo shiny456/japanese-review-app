@@ -1,0 +1,12 @@
+{
+  "name": "日語旅遊複習",
+  "short_name": "日語複習",
+  "description": "日本語GOGO × 旅遊會話複習 App",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#e85d75",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
