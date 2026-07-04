@@ -448,11 +448,8 @@ function renderManage() {
     <header class="page-head"><a href="#/home" class="btn-back">←</a><h1>單字管理與匯入</h1></header>
 
     <div class="card">
-      <h3>📷 拍照匯入（課本頁面）</h3>
-      <p class="sub-note">拍下課本單字頁，自動辨識文字後整理成卡片。光線充足、對正頁面效果最好。</p>
-      <input type="file" id="ocr-file" accept="image/*" capture="environment" class="hidden">
-      <button class="btn primary full" id="ocr-btn">選擇照片 / 拍照</button>
-      <div id="ocr-status" class="hidden"><div class="ocr-bar"><div class="ocr-fill" id="ocr-fill"></div></div><p id="ocr-msg">辨識中…第一次使用需下載辨識模型（約 20MB），請稍候</p></div>
+      <h3>📱 手機拍照最準的方法（推薦）</h3>
+      <p class="sub-note">用手機相機拍課本後，<b>在照片上長按文字 → 全選 → 拷貝</b>（iPhone 的「原況文字」或 Android 的 Google 智慧鏡頭），再貼到下面的「貼上文字匯入」。手機內建辨識比網頁 OCR 準確很多。</p>
     </div>
 
     <div class="card">
@@ -460,6 +457,14 @@ function renderManage() {
       <p class="sub-note">每行一個單字：「日文,假名,中文」或「日文,中文」（逗號、頓號、Tab、斜線都可以）</p>
       <textarea id="paste-input" rows="5" placeholder="例：&#10;水,みず,水&#10;お手洗い,おてあらい,洗手間"></textarea>
       <button class="btn primary full" id="parse-btn">解析成卡片</button>
+    </div>
+
+    <div class="card">
+      <h3>📷 網頁 OCR 辨識（備用）</h3>
+      <p class="sub-note">沒辦法用上面的方法時，也可以直接上傳照片辨識。日文部分準確度尚可，中文意思常會認錯，記得在確認畫面修正。</p>
+      <input type="file" id="ocr-file" accept="image/*" capture="environment" class="hidden">
+      <button class="btn full" id="ocr-btn">選擇照片 / 拍照</button>
+      <div id="ocr-status" class="hidden"><div class="ocr-bar"><div class="ocr-fill" id="ocr-fill"></div></div><p id="ocr-msg">辨識中…第一次使用需下載辨識模型（約 15MB），請稍候</p></div>
     </div>
 
     <div class="card hidden" id="preview-card">
