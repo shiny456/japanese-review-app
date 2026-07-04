@@ -326,6 +326,46 @@ textarea { resize: vertical; margin-bottom: 8px; }
 .custom-item:last-child { border-bottom: none; }
 .custom-actions { display: flex; align-items: center; gap: 4px; }
 
+/* ===== 文法庫 ===== */
+.gram-group { font-size: 14px; color: var(--text-light); margin: 16px 4px 8px; }
+.gram-item summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+}
+.gram-item summary::-webkit-details-marker { display: none; }
+.gram-pattern { font-size: 18px; font-weight: 700; }
+.gram-meaning { font-size: 13px; color: var(--text-light); }
+.gram-explain {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 10px 0;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+.gram-example {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.gram-q { font-size: 24px; }
+.btn-option.center { text-align: center; font-size: 18px; }
+.quiz-hint {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: #fff7e6;
+  border: 1px solid var(--amber);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .ocr-bar {
   height: 8px;
   background: var(--bg);

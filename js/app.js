@@ -1,5 +1,6 @@
 import { BUILTIN_VOCAB, CATEGORIES } from './data/vocab.js';
 import { DIALOGS } from './data/dialogs.js';
+import { GRAMMAR, GRAMMAR_GROUPS } from './data/grammar.js';
 import { store } from './storage.js';
 import * as srs from './srs.js';
 import { recognizeImage, parseCardText } from './ocr.js';
@@ -58,6 +59,7 @@ const routes = {
   quiz: renderQuiz,
   talk: renderDialogList,
   dialog: renderDialog,
+  grammar: renderGrammar,
   manage: renderManage,
 };
 
@@ -104,9 +106,13 @@ function renderHome() {
       <div class="action-icon">💬</div>
       <div><h2>情境會話</h2><p>點餐、問路、購物…實戰對話練習</p></div>
     </a>
+    <a class="card action-card" href="#/grammar">
+      <div class="action-icon">📖</div>
+      <div><h2>文法庫</h2><p>${GRAMMAR.length} 個句型重點，含例句與解說</p></div>
+    </a>
     <a class="card action-card" href="#/quiz">
       <div class="action-icon">✏️</div>
-      <div><h2>選擇題測驗</h2><p>檢查記憶，順便為日檢暖身</p></div>
+      <div><h2>選擇題測驗</h2><p>單字＋文法題，順便為日檢暖身</p></div>
     </a>
     <a class="card action-card" href="#/manage">
       <div class="action-icon">📥</div>
@@ -241,39 +247,65 @@ function renderQuiz() {
   app.innerHTML = `
     <header class="page-head"><a href="#/home" class="btn-back">←</a><h1>選擇題測驗</h1></header>
     <div class="card">
-      <h3>選擇範圍</h3>
-      <div class="cat-grid" id="quiz-cats">
-        ${CATEGORIES.filter((c) => counts[c.id] > 0).map((c) => `
-          <label class="cat-chip"><input type="checkbox" value="${c.id}" checked> ${c.icon} ${c.name} (${counts[c.id]})</label>
-        `).join('')}
+      <h3>出題來源</h3>
+      <label class="radio-line"><input type="radio" name="qsrc" value="vocab" checked> 單字題</label>
+      <label class="radio-line"><input type="radio" name="qsrc" value="grammar"> 文法題（填空選擇）</label>
+      <label class="radio-line"><input type="radio" name="qsrc" value="both"> 單字＋文法混合</label>
+      <div id="vocab-opts">
+        <h3>單字範圍</h3>
+        <div class="cat-grid" id="quiz-cats">
+          ${CATEGORIES.filter((c) => counts[c.id] > 0).map((c) => `
+            <label class="cat-chip"><input type="checkbox" value="${c.id}" checked> ${c.icon} ${c.name} (${counts[c.id]})</label>
+          `).join('')}
+        </div>
+        <h3>單字題型</h3>
+        <label class="radio-line"><input type="radio" name="qdir" value="jp2zh" checked> 看日文選中文</label>
+        <label class="radio-line"><input type="radio" name="qdir" value="zh2jp"> 看中文選日文</label>
+        <label class="radio-line"><input type="radio" name="qdir" value="mix"> 混合</label>
       </div>
-      <h3>題型</h3>
-      <label class="radio-line"><input type="radio" name="qdir" value="jp2zh" checked> 看日文選中文</label>
-      <label class="radio-line"><input type="radio" name="qdir" value="zh2jp"> 看中文選日文</label>
-      <label class="radio-line"><input type="radio" name="qdir" value="mix"> 混合</label>
       <button class="btn primary full" id="quiz-start">開始測驗（10 題）</button>
     </div>
   `;
 
+  document.querySelectorAll('input[name="qsrc"]').forEach((r) => {
+    r.onchange = () => $('#vocab-opts').classList.toggle('hidden', r.value === 'grammar' && r.checked);
+  });
+
   $('#quiz-start').onclick = () => {
+    const src = document.querySelector('input[name="qsrc"]:checked').value;
     const cats = [...document.querySelectorAll('#quiz-cats input:checked')].map((i) => i.value);
     const dir = document.querySelector('input[name="qdir"]:checked').value;
     const pool = cards.filter((c) => cats.includes(c.cat) && c.zh);
-    if (pool.length < 4) {
+    if (src !== 'grammar' && pool.length < 4) {
       alert('選擇的範圍至少要有 4 個單字才能出題');
       return;
     }
-    startQuiz(pool, dir);
+    startQuiz(pool, dir, src);
   };
 }
 
-function startQuiz(pool, dir) {
-  const questions = shuffle([...pool]).slice(0, 10).map((card) => {
-    const qDir = dir === 'mix' ? (Math.random() < 0.5 ? 'jp2zh' : 'zh2jp') : dir;
-    const distractors = shuffle(pool.filter((c) => c.id !== card.id)).slice(0, 3);
-    const options = shuffle([card, ...distractors]);
-    return { card, qDir, options };
-  });
+function vocabQuestion(card, pool, dir) {
+  const qDir = dir === 'mix' ? (Math.random() < 0.5 ? 'jp2zh' : 'zh2jp') : dir;
+  const distractors = shuffle(pool.filter((c) => c.id !== card.id)).slice(0, 3);
+  const options = shuffle([card, ...distractors]);
+  return { type: 'vocab', card, qDir, options };
+}
+
+function grammarQuestions(count) {
+  const items = GRAMMAR.flatMap((g) => g.quiz.map((item) => ({ type: 'grammar', g, item })));
+  return shuffle(items).slice(0, count);
+}
+
+function startQuiz(pool, dir, src = 'vocab') {
+  let questions = [];
+  if (src === 'vocab') {
+    questions = shuffle([...pool]).slice(0, 10).map((c) => vocabQuestion(c, pool, dir));
+  } else if (src === 'grammar') {
+    questions = grammarQuestions(10);
+  } else {
+    const v = shuffle([...pool]).slice(0, 5).map((c) => vocabQuestion(c, pool, dir));
+    questions = shuffle([...v, ...grammarQuestions(5)]);
+  }
   const state = { questions, index: 0, correct: 0, wrong: [] };
   showQuestion(state);
 }
@@ -289,10 +321,10 @@ function showQuestion(state) {
         ${state.wrong.length > 0 ? `
           <div class="card wrong-list">
             <h3>答錯的題目</h3>
-            ${state.wrong.map((c) => `
+            ${state.wrong.map((w) => `
               <div class="wrong-item">
-                <div><b>${esc(c.jp)}</b> <span class="kana-small">${esc(c.kana)}</span><br>${esc(c.zh)}</div>
-                ${speakBtn(c.kana || c.jp)}
+                <div><b>${esc(w.jp)}</b> ${w.kana ? `<span class="kana-small">${esc(w.kana)}</span>` : ''}<br>${esc(w.zh)}</div>
+                ${w.tts ? speakBtn(w.tts) : ''}
               </div>`).join('')}
           </div>` : ''}
         <a class="btn primary" href="#/quiz">再測一次</a>
@@ -302,16 +334,60 @@ function showQuestion(state) {
   }
 
   const q = state.questions[state.index];
+  const head = `
+    <div class="study-top">
+      <a href="#/quiz" class="btn-back">←</a>
+      <div class="progress-text">第 ${state.index + 1} / ${state.questions.length} 題</div>
+    </div>`;
+
+  if (q.type === 'grammar') {
+    const { g, item } = q;
+    app.innerHTML = `
+      ${head}
+      <div class="quiz-prompt">
+        <div class="challenge-hint">文法填空 · ${esc(g.meaning)}</div>
+        <div class="card-jp gram-q">${esc(item.q)}</div>
+      </div>
+      <div class="quiz-options">
+        ${item.options.map((opt, i) => `<button class="btn-option center" data-i="${i}">${esc(opt)}</button>`).join('')}
+      </div>
+      <div class="quiz-hint hidden" id="quiz-hint"></div>
+    `;
+    document.querySelectorAll('.btn-option').forEach((btn) => {
+      btn.onclick = () => {
+        const chosenIdx = Number(btn.dataset.i);
+        const isCorrect = chosenIdx === item.answer;
+        document.querySelectorAll('.btn-option').forEach((b, i) => {
+          b.disabled = true;
+          if (i === item.answer) b.classList.add('correct');
+          else if (b === btn) b.classList.add('incorrect');
+        });
+        if (isCorrect) {
+          state.correct++;
+        } else {
+          state.wrong.push({
+            jp: `${g.pattern}`,
+            kana: item.q.replace('___', `【${item.options[item.answer]}】`),
+            zh: `${g.meaning}。${item.hint}`,
+            tts: null,
+          });
+          const hintEl = $('#quiz-hint');
+          hintEl.textContent = `💡 ${item.hint}`;
+          hintEl.classList.remove('hidden');
+        }
+        setTimeout(() => { state.index++; showQuestion(state); }, isCorrect ? 700 : 2400);
+      };
+    });
+    return;
+  }
+
   const isJp2Zh = q.qDir === 'jp2zh';
   const prompt = isJp2Zh
     ? `<div class="card-jp">${esc(q.card.jp)}</div><div class="card-kana">${esc(q.card.kana)}</div>${speakBtn(q.card.kana || q.card.jp)}`
     : `<div class="card-zh big">${esc(q.card.zh)}</div>`;
 
   app.innerHTML = `
-    <div class="study-top">
-      <a href="#/quiz" class="btn-back">←</a>
-      <div class="progress-text">第 ${state.index + 1} / ${state.questions.length} 題</div>
-    </div>
+    ${head}
     <div class="quiz-prompt">${prompt}</div>
     <div class="quiz-options">
       ${q.options.map((opt, i) => `
@@ -331,7 +407,7 @@ function showQuestion(state) {
         else if (b === btn) b.classList.add('incorrect');
       });
       if (isCorrect) state.correct++;
-      else state.wrong.push(q.card);
+      else state.wrong.push({ jp: q.card.jp, kana: q.card.kana, zh: q.card.zh, tts: q.card.kana || q.card.jp });
       if (!isJp2Zh || !isCorrect) speak(q.card.kana || q.card.jp);
       setTimeout(() => { state.index++; showQuestion(state); }, isCorrect ? 700 : 1600);
     };
@@ -438,6 +514,35 @@ function startDialogChallenge(dialog) {
     });
   };
   step();
+}
+
+// ===== 文法庫 =====
+function renderGrammar() {
+  app.innerHTML = `
+    <header class="page-head"><a href="#/home" class="btn-back">←</a><h1>📖 文法庫</h1></header>
+    <p class="sub-note">點句型展開解說和例句。想測驗的話到「測驗」頁選「文法題」。</p>
+    ${GRAMMAR_GROUPS.map((group) => `
+      <h3 class="gram-group">${esc(group)}</h3>
+      ${GRAMMAR.filter((g) => g.lesson === group).map((g) => `
+        <details class="card gram-item">
+          <summary>
+            <span class="gram-pattern">${esc(g.pattern)}</span>
+            <span class="gram-meaning">${esc(g.meaning)}</span>
+          </summary>
+          <p class="gram-explain">${esc(g.explain)}</p>
+          ${g.examples.map((ex) => `
+            <div class="gram-example">
+              <div>
+                <div class="bubble-jp">${esc(ex.jp)}</div>
+                <div class="bubble-kana">${esc(ex.kana)}</div>
+                <div class="bubble-zh">${esc(ex.zh)}</div>
+              </div>
+              ${speakBtn(ex.kana || ex.jp)}
+            </div>`).join('')}
+        </details>`).join('')}
+    `).join('')}
+    <a class="btn primary full" href="#/quiz">✏️ 去做文法測驗</a>
+  `;
 }
 
 // ===== 單字管理與匯入 =====
