@@ -1,5 +1,5 @@
 // 離線快取：讓 app 在日本沒網路時也能複習
-const CACHE = 'jr-cache-v3';
+const CACHE = 'jr-cache-v4';
 const ASSETS = [
   './',
   './index.html',
